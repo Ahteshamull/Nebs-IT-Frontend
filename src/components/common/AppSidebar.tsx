@@ -143,18 +143,15 @@ const AppSidebar = () => {
       {/* sidebar header */}
       <SidebarHeader className="flex flex-col items-center py-4 md:py-6">
         <div className="flex w-full flex-col items-center gap-2 md:gap-3">
-          <div className="mt-3 flex h-[60px] w-[60px] items-center justify-center group-data-[collapsible=icon]:mt-0 group-data-[collapsible=icon]:h-10 group-data-[collapsible=icon]:w-10 md:mt-6 md:h-[80px] md:w-[80px]">
+          <div className="mt-3 flex items-center justify-center group-data-[collapsible=icon]:mt-0 group-data-[collapsible=icon]:h-10 group-data-[collapsible=icon]:w-10 md:mt-6">
             <Image
-              src="/logo.png"
+              src="/Logo.png"
               alt="Logo"
-              width={80}
-              height={80}
-              className="h-full w-full object-contain group-data-[collapsible=icon]:h-10 group-data-[collapsible=icon]:w-10"
+              width={120}
+              height={120}
+              className="group-data-[collapsible=icon] group-data-[collapsible=icon] h-full w-full object-contain"
             />
           </div>
-          <span className="text-center text-xl font-bold group-data-[collapsible=icon]:hidden md:text-2xl">
-            DS
-          </span>
         </div>
       </SidebarHeader>
 
