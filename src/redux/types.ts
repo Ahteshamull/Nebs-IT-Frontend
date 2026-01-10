@@ -57,19 +57,7 @@ export interface RootState {
     error: string | null;
     isAuthenticated: boolean;
   };
-  user: {
-    users: User[];
-    currentUser: User | null;
-    loading: boolean;
-    error: string | null;
-    pagination: {
-      currentPage: number;
-      totalPages: number;
-      totalUsers: number;
-      hasNext: boolean;
-      hasPrev: boolean;
-    };
-  };
+  userApi: any; // RTK Query API state
   adminApi: any; // RTK Query API state
 }
 

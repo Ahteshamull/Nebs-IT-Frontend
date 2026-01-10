@@ -2,14 +2,14 @@ import { configureStore } from "@reduxjs/toolkit";
 import { RootState } from "./types";
 import { noticeApi } from "./slices/noticeSlice";
 import authReducer from "./slices/authSlice";
-import userReducer from "./slices/userSlice";
+import { userApi } from "./slices/userSlice";
 import { adminApi } from "./slices/adminSlice";
 
 export const store = configureStore({
   reducer: {
     noticeApi: noticeApi.reducer,
     auth: authReducer,
-    user: userReducer,
+    userApi: userApi.reducer,
     adminApi: adminApi.reducer,
   },
   middleware: (getDefaultMiddleware) =>
@@ -19,6 +19,7 @@ export const store = configureStore({
       },
     })
       .concat(noticeApi.middleware)
+      .concat(userApi.middleware)
       .concat(adminApi.middleware),
 });
 
