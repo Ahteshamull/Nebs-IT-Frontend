@@ -154,13 +154,14 @@ export default function CreateNoticePage() {
                 {/* LEFT */}
                 <div className="space-y-6">
                   <div>
-                    <Label>Target Department / Individual</Label>
+                    <Label>Target Department / Individual *</Label>
                     <select
                       className="mt-2 h-12 w-full rounded border px-3"
                       value={formData.targetDepartments}
                       onChange={(e) => handleInputChange("targetDepartments", e.target.value)}
+                      required
                     >
-                      <option value="">Select</option>
+                      <option value="">Select Department</option>
                       {departments.map((d) => (
                         <option key={d}>{d}</option>
                       ))}
@@ -168,38 +169,46 @@ export default function CreateNoticePage() {
                   </div>
 
                   <div>
-                    <Label>Notice Title</Label>
+                    <Label>Notice Title *</Label>
                     <Input
                       className="mt-2 h-12"
                       value={formData.noticeTitle}
                       onChange={(e) => handleInputChange("noticeTitle", e.target.value)}
+                      placeholder="Enter notice title..."
+                      required
                     />
                   </div>
 
                   <div>
-                    <Label>Employee ID</Label>
+                    <Label>Employee ID *</Label>
                     <Input
                       className="mt-2 h-12"
                       value={formData.employeeId}
                       onChange={(e) => handleInputChange("employeeId", e.target.value)}
+                      placeholder="Enter employee ID..."
+                      required
                     />
                   </div>
 
                   <div>
-                    <Label>Employee Name</Label>
+                    <Label>Employee Name *</Label>
                     <Input
                       className="mt-2 h-12"
                       value={formData.employeeName}
                       onChange={(e) => handleInputChange("employeeName", e.target.value)}
+                      placeholder="Enter employee name..."
+                      required
                     />
                   </div>
 
                   <div>
-                    <Label>Position</Label>
+                    <Label>Position *</Label>
                     <Input
                       className="mt-2 h-12"
                       value={formData.position}
                       onChange={(e) => handleInputChange("position", e.target.value)}
+                      placeholder="Enter position..."
+                      required
                     />
                   </div>
                 </div>
@@ -207,13 +216,14 @@ export default function CreateNoticePage() {
                 {/* RIGHT */}
                 <div className="space-y-6">
                   <div>
-                    <Label>Notice Type</Label>
+                    <Label>Notice Type *</Label>
                     <select
                       className="mt-2 h-12 w-full rounded border px-3"
                       value={formData.noticeType}
                       onChange={(e) => handleInputChange("noticeType", e.target.value)}
+                      required
                     >
-                      <option value="">Select</option>
+                      <option value="">Select Type</option>
                       {noticeTypes.map((n) => (
                         <option key={n}>{n}</option>
                       ))}
@@ -221,11 +231,12 @@ export default function CreateNoticePage() {
                   </div>
 
                   <div>
-                    <Label>Publish Date</Label>
+                    <Label>Publish Date *</Label>
                     <button
                       type="button"
                       className="mt-2 flex h-12 w-full items-center rounded border px-4"
                       onClick={() => setShowCalendar(!showCalendar)}
+                      required
                     >
                       <CalendarDays className="mr-2 h-5 w-5" />
                       {isMounted && formData.publishDate
@@ -248,18 +259,27 @@ export default function CreateNoticePage() {
                   </div>
 
                   <div>
-                    <Label>Notice Body</Label>
+                    <Label>Notice Body *</Label>
                     <Textarea
                       className="mt-2 min-h-[200px]"
                       value={formData.noticeBody}
                       onChange={(e) => handleInputChange("noticeBody", e.target.value)}
+                      placeholder="Enter notice content..."
+                      required
                     />
                   </div>
 
                   <div>
                     <Label>Attachments</Label>
                     <div className="mt-2 rounded border-2 border-dashed p-6 text-center">
-                      <input id="upload" type="file" multiple hidden onChange={handleFileUpload} />
+                      <input
+                        id="upload"
+                        type="file"
+                        required
+                        multiple
+                        hidden
+                        onChange={handleFileUpload}
+                      />
                       <label htmlFor="upload">
                         <Upload className="mx-auto mb-2 h-10 w-10 text-gray-400" />
                         <span className="text-sm text-gray-600">Click to upload</span>
