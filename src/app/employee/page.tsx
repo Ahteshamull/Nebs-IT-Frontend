@@ -230,6 +230,7 @@ function UsersTable({
 type User = (typeof seedUsers)[0];
 
 export default function UsersPage() {
+  const [isMounted, setIsMounted] = React.useState(false);
   const [users, setUsers] = React.useState(seedUsers);
   const [blockedUsers, setBlockedUsers] = React.useState<User[]>([]);
   const [query, setQuery] = React.useState("");
@@ -239,6 +240,10 @@ export default function UsersPage() {
   const [showBlockedUsers, setShowBlockedUsers] = React.useState(false);
   const [currentPage, setCurrentPage] = React.useState(1);
   const itemsPerPage = 10;
+
+  React.useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   const filtered = users.filter(
     (u) =>

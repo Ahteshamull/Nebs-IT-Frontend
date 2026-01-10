@@ -1,4 +1,5 @@
 "use client";
+
 import { useState, useEffect } from "react";
 import {
   LayoutDashboard,
@@ -111,11 +112,11 @@ const HydrationSafeButton = ({ className, children, ...props }: any) => {
 
 /* ================= MAIN COMPONENT ================= */
 
-const AppSidebar = () => {
+export default function AppSidebar() {
+  const [isMounted, setIsMounted] = useState(false);
   const { state } = useSidebar();
   const pathname = usePathname();
   const [expandedItems, setExpandedItems] = useState<string[]>([]);
-  const [isMounted, setIsMounted] = useState(false);
 
   useEffect(() => {
     setIsMounted(true);
@@ -255,6 +256,4 @@ const AppSidebar = () => {
       </SidebarFooter>
     </Sidebar>
   );
-};
-
-export default AppSidebar;
+}
