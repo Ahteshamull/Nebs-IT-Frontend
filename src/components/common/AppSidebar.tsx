@@ -94,7 +94,18 @@ const items = [
 
 /* ================= HYDRATION-SAFE COMPONENTS ================= */
 
-const HydrationSafeLink = ({ href, className, children, ...props }: any) => {
+const HydrationSafeLink = ({
+  href,
+  className,
+  children,
+  isMounted,
+  ...props
+}: {
+  href: string;
+  className?: string;
+  children: React.ReactNode;
+  isMounted: boolean;
+} & React.AnchorHTMLAttributes<HTMLAnchorElement>) => {
   return (
     <Link href={href} className={className} {...props}>
       {isMounted ? children : <span suppressHydrationWarning>{children}</span>}
@@ -102,7 +113,16 @@ const HydrationSafeLink = ({ href, className, children, ...props }: any) => {
   );
 };
 
-const HydrationSafeButton = ({ className, children, ...props }: any) => {
+const HydrationSafeButton = ({
+  className,
+  children,
+  isMounted,
+  ...props
+}: {
+  className?: string;
+  children: React.ReactNode;
+  isMounted: boolean;
+} & React.ButtonHTMLAttributes<HTMLButtonElement>) => {
   return (
     <button className={className} {...props}>
       {isMounted ? children : <span suppressHydrationWarning>{children}</span>}
@@ -196,6 +216,7 @@ export default function AppSidebar() {
                               >
                                 <HydrationSafeLink
                                   href={child.url}
+                                  isMounted={isMounted}
                                   className={`flex items-center gap-3 md:gap-4 ${
                                     isActive(child.url)
                                       ? "bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground"
