@@ -4,6 +4,8 @@ import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { CalendarDays, Upload, X, Plus } from "lucide-react";
 
+import { useCreateDraftNoticeMutation, useCreateNoticeMutation } from "@/redux/api/noticeApi";
+
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -55,6 +57,11 @@ const departments = [
 export default function CreateNoticePage() {
   const router = useRouter();
 
+  const [createNotice, { isLoading: isCreating }] = useCreateNoticeMutation();
+  const [createDraftNotice, { isLoading: isCreatingDraft }] = useCreateDraftNoticeMutation();
+
+  const isLoading = isCreating || isCreatingDraft;
+
   const [isMounted, setIsMounted] = useState(false);
 
   const [formData, setFormData] = useState<CreateNoticeFormData>({
@@ -101,16 +108,80 @@ export default function CreateNoticePage() {
   const handleSubmit = async (saveAsDraft: boolean) => {
     setIsSubmitting(true);
     try {
-      // simulate API call
-      await new Promise((r) => setTimeout(r, 1000));
+      alert(saveAsDraft ? "Draft save start..." : "Publishing notice... Please wait");
+
+      console.log("[CreateNotice] submit clicked", {
+        saveAsDraft,
+        targetDepartments: formData.targetDepartments,
+        noticeTitle: formData.noticeTitle,
+        employeeId: formData.employeeId,
+        employeeName: formData.employeeName,
+        position: formData.position,
+        noticeType: formData.noticeType,
+        publishDate: formData.publishDate,
+        noticeBodyLength: formData.noticeBody?.length,
+        attachmentsCount: formData.attachments.length,
+        attachments: formData.attachments.map((f) => ({
+          name: f.name,
+          type: f.type,
+          size: f.size,
+        })),
+      });
+
+      if (
+        !formData.noticeTitle ||
+        !formData.noticeType ||
+        !formData.targetDepartments ||
+        !formData.noticeBody
+      ) {
+        console.error("Missing required fields");
+        alert("Required field missing.");
+        return;
+      }
+
+      const apiFormData = new FormData();
+
+      apiFormData.append("targetDepartments", formData.targetDepartments);
+      apiFormData.append("noticeTitle", formData.noticeTitle);
+      apiFormData.append("employeeId", formData.employeeId);
+      apiFormData.append("employeeName", formData.employeeName);
+      apiFormData.append("position", formData.position);
+      apiFormData.append("noticeType", formData.noticeType);
+      apiFormData.append("publishDate", formData.publishDate.toISOString());
+      apiFormData.append("noticeBody", formData.noticeBody);
+      apiFormData.append("status", saveAsDraft ? "Draft" : "Published");
+
+      formData.attachments.forEach((file) => {
+        apiFormData.append("attachments", file);
+      });
+
+      console.log("[CreateNotice] FormData preview:");
+      apiFormData.forEach((value, key) => {
+        if (value instanceof File) {
+          console.log(`  ${key}: [File]`, { name: value.name, type: value.type, size: value.size });
+        } else {
+          console.log(`  ${key}:`, value);
+        }
+      });
+
+      if (saveAsDraft) {
+        await createDraftNotice(apiFormData).unwrap();
+        alert("Draft saved successfully ✅");
+      } else {
+        await createNotice(apiFormData).unwrap();
+        alert("Notice published successfully ✅");
+      }
 
       if (saveAsDraft) {
         router.push("/notice-board");
       } else {
         setShowSuccessModal(true);
       }
-    } catch (err) {
-      console.error(err);
+    } catch (err: any) {
+      const status = err?.status;
+      const message = err?.data?.message || err?.error || err?.message || "Failed to create notice";
+      console.error("Create notice failed:", { status, err });
+      alert(message);
     } finally {
       setIsSubmitting(false);
     }
@@ -306,7 +377,7 @@ export default function CreateNoticePage() {
 
                 <Button
                   variant="outline"
-                  disabled={isSubmitting}
+                  disabled={isSubmitting || isLoading}
                   onClick={() => handleSubmit(true)}
                 >
                   Save as Draft
@@ -314,7 +385,7 @@ export default function CreateNoticePage() {
 
                 <Button
                   className="bg-red-600 hover:bg-red-700"
-                  disabled={isSubmitting}
+                  disabled={isSubmitting || isLoading}
                   onClick={() => handleSubmit(false)}
                 >
                   <Plus className="mr-2 h-4 w-4" />

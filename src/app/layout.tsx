@@ -1,12 +1,8 @@
 import type { Metadata } from "next";
 import { Poppins } from "next/font/google";
 import "./globals.css";
-import AppSidebar from "@/components/common/AppSidebar";
-import Navbar from "@/components/common/Navbar";
-import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
-import NotificationProvider from "@/context/notification-context";
-import { ThemeProvider } from "@/components/common/theme-provider";
 import { cookies } from "next/headers";
+import ClientRootLayout from "@/components/common/ClientRootLayout";
 
 const poppins = Poppins({
   variable: "--font-poppins",
@@ -29,28 +25,11 @@ export default async function RootLayout({
 
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={`${poppins.variable} bg-background font-sans antialiased`}>
-        <ThemeProvider
-          attribute="class"
-          defaultTheme="system"
-          enableSystem
-          disableTransitionOnChange
-        >
-          <NotificationProvider>
-            <SidebarProvider defaultOpen={defaultOpen}>
-              {/* <div className="flex min-h-screen overflow-hidden gap-10"> */}
-              {/* Sidebar */}
-              <AppSidebar />
-
-              {/* Main Content */}
-              <SidebarInset className="ml-5 px-5">
-                <Navbar />
-                <div className="">{children}</div>
-              </SidebarInset>
-              {/* </div> */}
-            </SidebarProvider>
-          </NotificationProvider>
-        </ThemeProvider>
+      <body
+        suppressHydrationWarning
+        className={`${poppins.variable} bg-background font-sans antialiased`}
+      >
+        <ClientRootLayout defaultOpen={defaultOpen}>{children}</ClientRootLayout>
       </body>
     </html>
   );
