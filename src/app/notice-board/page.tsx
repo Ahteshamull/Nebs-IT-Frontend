@@ -323,6 +323,8 @@ export default function NoticeBoardPage() {
     }
   };
 
+  const draftNotices = notices.filter((n) => n.status === "Draft");
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
@@ -560,6 +562,55 @@ export default function NoticeBoardPage() {
           </div>
         )}
       </div>
+
+      {/* Draft Notices Modal */}
+      <Dialog open={showDraftModal} onOpenChange={setShowDraftModal}>
+        <DialogContent className="max-w-3xl">
+          <DialogHeader>
+            <DialogTitle>Draft Notices</DialogTitle>
+          </DialogHeader>
+
+          {draftNotices.length === 0 ? (
+            <div className="rounded-md border bg-white p-6 text-sm text-gray-600">
+              No draft notices found.
+            </div>
+          ) : (
+            <div className="max-h-[60vh] overflow-y-auto rounded-md border">
+              <div className="bg-muted grid grid-cols-12 gap-2 px-4 py-3 text-xs font-semibold text-gray-700">
+                <div className="col-span-5">Title</div>
+                <div className="col-span-3">Department</div>
+                <div className="col-span-2">Type</div>
+                <div className="col-span-2 text-right">Action</div>
+              </div>
+              <div className="divide-y">
+                {draftNotices.map((n) => (
+                  <div key={n._id} className="grid grid-cols-12 items-center gap-2 px-4 py-3">
+                    <div className="col-span-5 truncate text-sm font-medium text-gray-900">
+                      {n.noticeTitle}
+                    </div>
+                    <div className="col-span-3 truncate text-sm text-gray-700">
+                      {n.targetDepartments}
+                    </div>
+                    <div className="col-span-2 truncate text-sm text-gray-700">{n.noticeType}</div>
+                    <div className="col-span-2 flex justify-end">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => {
+                          setSelected(n);
+                          setShowDraftModal(false);
+                        }}
+                      >
+                        View
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
 
       {/* View Modal */}
       {selected && (
