@@ -166,7 +166,7 @@ export default function AppSidebar() {
         <div className="flex w-full flex-col items-center gap-2 md:gap-3">
           <div className="mt-3 flex items-center justify-center group-data-[collapsible=icon]:mt-0 group-data-[collapsible=icon]:h-10 group-data-[collapsible=icon]:w-10 md:mt-6">
             <Image
-              src="/Logo.png"
+              src="/logos.png"
               alt="Logo"
               width={120}
               height={120}
