@@ -149,7 +149,10 @@ export default function CreateNoticePage() {
       apiFormData.append("employeeName", formData.employeeName);
       apiFormData.append("position", formData.position);
       apiFormData.append("noticeType", formData.noticeType);
-      apiFormData.append("publishDate", formData.publishDate.toISOString());
+      apiFormData.append(
+        "publishDate",
+        formData.publishDate ? formData.publishDate.toISOString() : "",
+      );
       apiFormData.append("noticeBody", formData.noticeBody);
       apiFormData.append("status", saveAsDraft ? "Draft" : "Published");
 
