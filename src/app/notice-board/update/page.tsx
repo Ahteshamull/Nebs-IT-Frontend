@@ -10,6 +10,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Calendar } from "@/components/ui/calendar";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { useGetNoticeByIdQuery, useUpdateNoticeMutation } from "@/redux/api/noticeApi";
+import type { Attachment } from "@/redux/types";
 
 /* ================= TYPES ================= */
 
@@ -108,6 +110,16 @@ export default function UpdateNoticePage() {
 
   const [isMounted, setIsMounted] = useState(false);
 
+  const {
+    data: noticeRes,
+    isLoading: isFetching,
+    error: fetchError,
+  } = useGetNoticeByIdQuery(noticeId ?? "", {
+    skip: !noticeId,
+  });
+
+  const [updateNotice, { isLoading: isUpdating }] = useUpdateNoticeMutation();
+
   const [formData, setFormData] = useState<CreateNoticeFormData>({
     targetDepartments: "",
     noticeTitle: "",
@@ -120,31 +132,31 @@ export default function UpdateNoticePage() {
     attachments: [],
   });
 
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [existingAttachments, setExistingAttachments] = useState<Attachment[]>([]);
+
   const [showCalendar, setShowCalendar] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
 
   useEffect(() => {
     setIsMounted(true);
-
-    // Load notice data based on ID
-    if (noticeId) {
-      const notice = mockNotices.find((n) => n.id === noticeId);
-      if (notice) {
-        setFormData({
-          targetDepartments: notice.departmentsOrIndividuals,
-          noticeTitle: notice.title,
-          employeeId: "",
-          employeeName: "",
-          position: "",
-          noticeType: notice.noticeType,
-          publishDate: new Date(notice.publishedOn),
-          noticeBody: notice.content.replace(/<[^>]*>/g, ""),
-          attachments: [],
-        });
-      }
-    }
   }, [noticeId]);
+
+  useEffect(() => {
+    const notice = noticeRes?.data;
+    if (!notice) return;
+
+    setFormData((prev) => ({
+      ...prev,
+      targetDepartments: notice.targetDepartments || "",
+      noticeTitle: notice.noticeTitle || "",
+      noticeType: notice.noticeType || "",
+      publishDate: notice.publishDate ? new Date(notice.publishDate) : null,
+      noticeBody: notice.noticeBody || "",
+      attachments: [],
+    }));
+
+    setExistingAttachments(notice.attachments || []);
+  }, [noticeRes?.data]);
 
   /* ================= HANDLERS ================= */
 
@@ -168,10 +180,32 @@ export default function UpdateNoticePage() {
   };
 
   const handleSubmit = async (saveAsDraft: boolean) => {
-    setIsSubmitting(true);
+    if (!noticeId) return;
+
     try {
-      // simulate API call
-      await new Promise((r) => setTimeout(r, 1000));
+      if (
+        !formData.noticeTitle ||
+        !formData.noticeType ||
+        !formData.targetDepartments ||
+        !formData.publishDate ||
+        !formData.noticeBody
+      ) {
+        return;
+      }
+
+      const payload = new FormData();
+      payload.append("noticeTitle", formData.noticeTitle);
+      payload.append("noticeType", formData.noticeType);
+      payload.append("targetDepartments", formData.targetDepartments);
+      payload.append("publishDate", formData.publishDate.toISOString());
+      payload.append("noticeBody", formData.noticeBody);
+      payload.append("status", saveAsDraft ? "Draft" : "Published");
+
+      for (const file of formData.attachments) {
+        payload.append("attachments", file);
+      }
+
+      await updateNotice({ id: noticeId, body: payload }).unwrap();
 
       if (saveAsDraft) {
         router.push("/notice-board");
@@ -180,8 +214,6 @@ export default function UpdateNoticePage() {
       }
     } catch (err) {
       console.error(err);
-    } finally {
-      setIsSubmitting(false);
     }
   };
 
@@ -200,10 +232,34 @@ export default function UpdateNoticePage() {
   };
 
   /* ================= UI ================= */
-
   return (
     <div className="min-h-screen bg-gray-50">
-      {isMounted ? (
+      {!isMounted ? (
+        <div
+          suppressHydrationWarning
+          className="flex min-h-screen items-center justify-center bg-gray-50"
+        >
+          <div className="text-center">
+            <div className="h-12 w-12 animate-spin rounded-full border-b-2 border-gray-300 border-t-transparent"></div>
+          </div>
+        </div>
+      ) : !noticeId ? (
+        <div className="flex min-h-screen items-center justify-center bg-gray-50">
+          <div className="rounded-lg border bg-white p-6 text-sm text-gray-600">
+            Missing notice id.
+          </div>
+        </div>
+      ) : isFetching ? (
+        <div className="flex min-h-screen items-center justify-center bg-gray-50">
+          <div className="h-12 w-12 animate-spin rounded-full border-b-2 border-gray-300 border-t-transparent"></div>
+        </div>
+      ) : fetchError ? (
+        <div className="flex min-h-screen items-center justify-center bg-gray-50">
+          <div className="rounded-lg border bg-white p-6 text-sm text-red-600">
+            Failed to load notice.
+          </div>
+        </div>
+      ) : (
         <>
           {/* Header */}
           <div className="flex items-center justify-between border-b bg-white px-6 py-4">
@@ -335,6 +391,20 @@ export default function UpdateNoticePage() {
                       </label>
                     </div>
 
+                    {existingAttachments.length > 0 && (
+                      <div className="mt-3 space-y-2">
+                        {existingAttachments.map((a, idx) => (
+                          <div
+                            key={`${a.filename}-${idx}`}
+                            className="flex items-center justify-between rounded bg-gray-50 p-2"
+                          >
+                            <span className="truncate text-sm">{a.originalName}</span>
+                            <span className="text-xs text-gray-500">Existing</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
                     {formData.attachments.map((f, i) => (
                       <div key={i} className="mt-2 flex justify-between rounded bg-gray-50 p-2">
                         <span className="truncate text-sm">{f.name}</span>
@@ -353,17 +423,13 @@ export default function UpdateNoticePage() {
                   Cancel
                 </Button>
 
-                <Button
-                  variant="outline"
-                  disabled={isSubmitting}
-                  onClick={() => handleSubmit(true)}
-                >
+                <Button variant="outline" disabled={isUpdating} onClick={() => handleSubmit(true)}>
                   Save as Draft
                 </Button>
 
                 <Button
                   className="bg-red-600 hover:bg-red-700"
-                  disabled={isSubmitting}
+                  disabled={isUpdating}
                   onClick={() => handleSubmit(false)}
                 >
                   <Plus className="mr-2 h-4 w-4" />
@@ -406,15 +472,6 @@ export default function UpdateNoticePage() {
             </DialogContent>
           </Dialog>
         </>
-      ) : (
-        <div
-          suppressHydrationWarning
-          className="flex min-h-screen items-center justify-center bg-gray-50"
-        >
-          <div className="text-center">
-            <div className="h-12 w-12 animate-spin rounded-full border-b-2 border-gray-300 border-t-transparent"></div>
-          </div>
-        </div>
       )}
     </div>
   );
