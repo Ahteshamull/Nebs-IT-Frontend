@@ -311,7 +311,6 @@ export default function CreateNoticePage() {
                       type="button"
                       className="mt-2 flex h-12 w-full items-center rounded border px-4"
                       onClick={() => setShowCalendar(!showCalendar)}
-                      required
                     >
                       <CalendarDays className="mr-2 h-5 w-5" />
                       {isMounted && formData.publishDate
