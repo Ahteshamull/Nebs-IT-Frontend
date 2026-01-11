@@ -322,7 +322,7 @@ export default function CreateNoticePage() {
                       <div className="mt-2 rounded border bg-white">
                         <Calendar
                           mode="single"
-                          selected={formData.publishDate}
+                          selected={formData.publishDate || undefined}
                           onSelect={(d) => {
                             handleInputChange("publishDate", d);
                             setShowCalendar(false);
