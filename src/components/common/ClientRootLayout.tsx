@@ -18,7 +18,7 @@ export default function ClientRootLayout({
 }) {
   return (
     <ReduxProvider>
-      <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
+      <ThemeProvider attribute="class" defaultTheme="light" enableSystem disableTransitionOnChange>
         <NotificationProvider>
           <SidebarProvider defaultOpen={defaultOpen}>
             <AppSidebar />
