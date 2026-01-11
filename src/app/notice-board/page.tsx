@@ -28,7 +28,7 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
 } from "@/components/ui/dropdown-menu";
-import { useGetAllNoticesQuery } from "@/redux/api/noticeApi";
+import { useGetAllNoticesQuery, useDeleteNoticeMutation } from "@/redux/api/noticeApi";
 
 /* ================= TYPES ================= */
 
@@ -215,6 +215,8 @@ export default function NoticeBoardPage() {
     targetDepartments: departmentFilter === "All" ? undefined : departmentFilter,
   });
 
+  const [deleteNotice, { isLoading: isDeleting }] = useDeleteNoticeMutation();
+
   const pagination = allNoticesData?.pagination;
   const [localNotices, setLocalNotices] = useState<Notice[]>([]);
   const notices = localNotices;
@@ -316,10 +318,15 @@ export default function NoticeBoardPage() {
     setDeleteConfirm({ id, title: n?.noticeTitle || "" });
   };
 
-  const confirmDelete = () => {
+  const confirmDelete = async () => {
     if (deleteConfirm) {
-      setLocalNotices((prev) => prev.filter((n) => n._id !== deleteConfirm.id));
-      setDeleteConfirm(null);
+      try {
+        await deleteNotice(deleteConfirm.id).unwrap();
+        setLocalNotices((prev) => prev.filter((n) => n._id !== deleteConfirm.id));
+        setDeleteConfirm(null);
+      } catch (err) {
+        console.error("Failed to delete notice:", err);
+      }
     }
   };
 
@@ -811,8 +818,19 @@ export default function NoticeBoardPage() {
                 >
                   Cancel
                 </Button>
-                <Button onClick={confirmDelete} className="bg-red-600 text-white hover:bg-red-700">
-                  Delete Notice
+                <Button
+                  onClick={confirmDelete}
+                  className="bg-red-600 text-white hover:bg-red-700"
+                  disabled={isDeleting}
+                >
+                  {isDeleting ? (
+                    <>
+                      <div className="mr-2 h-4 w-4 animate-spin rounded-full border-b-2 border-white border-t-transparent" />
+                      Deleting...
+                    </>
+                  ) : (
+                    "Delete Notice"
+                  )}
                 </Button>
               </div>
             </div>

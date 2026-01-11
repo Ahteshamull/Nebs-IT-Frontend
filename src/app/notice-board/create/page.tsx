@@ -108,7 +108,9 @@ export default function CreateNoticePage() {
   const handleSubmit = async (saveAsDraft: boolean) => {
     setIsSubmitting(true);
     try {
-      alert(saveAsDraft ? "Draft save start..." : "Publishing notice... Please wait");
+      if (saveAsDraft) {
+        alert("Draft save start...");
+      }
 
       console.log("[CreateNotice] submit clicked", {
         saveAsDraft,
@@ -169,7 +171,6 @@ export default function CreateNoticePage() {
         alert("Draft saved successfully ✅");
       } else {
         await createNotice(apiFormData).unwrap();
-        alert("Notice published successfully ✅");
       }
 
       if (saveAsDraft) {
