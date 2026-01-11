@@ -28,70 +28,22 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
 } from "@/components/ui/dropdown-menu";
+import { useGetAllNoticesQuery } from "@/redux/api/noticeApi";
 
 /* ================= TYPES ================= */
 
 type NoticeStatus = "Published" | "Unpublished" | "Draft";
 type FilterStatus = NoticeStatus | "All";
 type Notice = {
-  id: string;
-  title: string;
+  _id: string;
+  noticeTitle: string;
   noticeType: string;
-  departmentsOrIndividuals: string;
-  publishedOn: string;
+  targetDepartments: string;
+  publishDate: string;
   status: NoticeStatus;
-  content: string;
+  noticeBody: string;
+  attachments?: any[];
 };
-
-/* ================= SEED DATA ================= */
-
-const seedNotices: Notice[] = [
-  {
-    id: "1",
-    title: "Office closed on Friday for maintenance.",
-    noticeType: "General / Company-Wide",
-    departmentsOrIndividuals: "All Department",
-    publishedOn: "15-Jun-2025",
-    status: "Published",
-    content: "<p>The office will be closed for maintenance.</p>",
-  },
-  {
-    id: "2",
-    title: "Eid al-Fitr holiday schedule.",
-    noticeType: "Holiday & Event",
-    departmentsOrIndividuals: "Finance",
-    publishedOn: "15-Jun-2025",
-    status: "Published",
-    content: "<p>Eid holidays schedule announced.</p>",
-  },
-  {
-    id: "3",
-    title: "Updated code of conduct policy",
-    noticeType: "HR & Policy Update",
-    departmentsOrIndividuals: "Sales Team",
-    publishedOn: "15-Jun-2025",
-    status: "Published",
-    content: "<p>New code of conduct is now effective.</p>",
-  },
-  {
-    id: "4",
-    title: "Unauthorized absence recorded on 18 Oct 2025",
-    noticeType: "Warning / Disciplinary",
-    departmentsOrIndividuals: "Individual",
-    publishedOn: "15-Jun-2025",
-    status: "Unpublished",
-    content: "<p>This notice is currently unpublished.</p>",
-  },
-  {
-    id: "5",
-    title: "Office closed today due to severe weather",
-    noticeType: "Emergency / Urgent",
-    departmentsOrIndividuals: "HR",
-    publishedOn: "15-Jun-2025",
-    status: "Draft",
-    content: "<p>Weather emergency notice draft.</p>",
-  },
-];
 
 /* ================= STATUS TOGGLE ================= */
 
@@ -171,31 +123,33 @@ function NoticesTable({
         </thead>
         <tbody>
           {notices.map((notice) => (
-            <tr key={notice.id} className="hover:bg-muted/30 border-t">
+            <tr key={notice._id} className="hover:bg-muted/30 border-t">
               <td className="px-6 py-4">
                 <div className="flex items-center gap-3">
                   {isMounted && (
                     <button
-                      onClick={() => onToggleNotice(notice.id)}
+                      onClick={() => onToggleNotice(notice._id)}
                       className="hover:text-primary"
                     >
-                      {selectedNotices.has(notice.id) ? (
+                      {selectedNotices.has(notice._id) ? (
                         <CheckSquare className="h-4 w-4" />
                       ) : (
                         <Square className="h-4 w-4" />
                       )}
                     </button>
                   )}
-                  <span className="text-sm font-medium">{notice.title}</span>
+                  <span className="text-sm font-medium">{notice.noticeTitle}</span>
                 </div>
               </td>
               <td className="px-6 py-4 text-sm">{notice.noticeType}</td>
-              <td className="px-6 py-4 text-sm">{notice.departmentsOrIndividuals}</td>
-              <td className="px-6 py-4 text-sm">{notice.publishedOn}</td>
+              <td className="px-6 py-4 text-sm">{notice.targetDepartments}</td>
+              <td className="px-6 py-4 text-sm">
+                {new Date(notice.publishDate).toLocaleDateString()}
+              </td>
               <td className="px-6 py-4">
                 <StatusToggle
                   status={notice.status}
-                  onChange={(s) => onStatusChange(notice.id, s)}
+                  onChange={(s) => onStatusChange(notice._id, s)}
                 />
               </td>
               <td className="px-6 py-4">
@@ -206,14 +160,14 @@ function NoticesTable({
                   <Button
                     size="icon"
                     variant="ghost"
-                    onClick={() => router.push(`/notice-board/update?id=${notice.id}`)}
+                    onClick={() => router.push(`/notice-board/update?id=${notice._id}`)}
                   >
                     <Pencil className="h-4 w-4" />
                   </Button>
                   <Button
                     size="icon"
                     variant="ghost"
-                    onClick={() => onDeleteNotice(notice.id, notice.title)}
+                    onClick={() => onDeleteNotice(notice._id)}
                     className="text-red-600 hover:bg-red-50 hover:text-red-700"
                   >
                     <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -239,53 +193,65 @@ function NoticesTable({
 
 export default function NoticeBoardPage() {
   const router = useRouter();
-  const [notices, setNotices] = useState<Notice[]>(seedNotices);
-  const [query, setQuery] = useState("");
   const [page, setPage] = useState(1);
-  const [selected, setSelected] = useState<Notice | null>(null);
-  const [selectedNotices, setSelectedNotices] = useState<Set<string>>(new Set());
-  const [isMounted, setIsMounted] = useState(false);
-  const [showDraftModal, setShowDraftModal] = useState(false);
-  const [deleteConfirm, setDeleteConfirm] = useState<{ id: string; title: string } | null>(null);
+  const [limit] = useState(10);
+  const [query, setQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<FilterStatus>("All");
   const [departmentFilter, setDepartmentFilter] = useState("All");
   const [employeeFilter, setEmployeeFilter] = useState("");
   const [publishedOnFilter, setPublishedOnFilter] = useState<string>("All");
+  const [selected, setSelected] = useState<Notice | null>(null);
+  const [selectedNotices, setSelectedNotices] = useState<Set<string>>(new Set());
+
+  const {
+    data: allNoticesData,
+    isLoading,
+    error,
+  } = useGetAllNoticesQuery({
+    page,
+    limit,
+    search: query,
+    status: statusFilter === "All" ? undefined : statusFilter,
+    targetDepartments: departmentFilter === "All" ? undefined : departmentFilter,
+  });
+
+  const pagination = allNoticesData?.pagination;
+  const [localNotices, setLocalNotices] = useState<Notice[]>([]);
+  const notices = localNotices;
+  const [isMounted, setIsMounted] = useState(false);
+  const [showDraftModal, setShowDraftModal] = useState(false);
+  const [deleteConfirm, setDeleteConfirm] = useState<{ id: string; title: string } | null>(null);
 
   useEffect(() => {
     setIsMounted(true);
   }, []);
 
-  // Filter states
-  const perPage = 5;
+  useEffect(() => {
+    setLocalNotices(allNoticesData?.data || []);
+  }, [allNoticesData?.data]);
 
   // Get unique departments for filter dropdown
-  const departments = [
-    "All",
-    ...Array.from(new Set(notices.map((n) => n.departmentsOrIndividuals))),
-  ];
+  const departments = ["All", ...Array.from(new Set(notices.map((n) => n.targetDepartments)))];
 
   const filtered = notices.filter((n) => {
-    const matchesSearch =
-      n.title.toLowerCase().includes(query.toLowerCase()) ||
-      n.noticeType.toLowerCase().includes(query.toLowerCase()) ||
-      n.departmentsOrIndividuals.toLowerCase().includes(query.toLowerCase());
     const matchesDepartment =
-      departmentFilter === "All" || n.departmentsOrIndividuals === departmentFilter;
+      departmentFilter === "All" || n.targetDepartments === departmentFilter;
     const matchesEmployee =
       employeeFilter === "" ||
-      n.title.toLowerCase().includes(employeeFilter.toLowerCase()) ||
-      n.departmentsOrIndividuals.toLowerCase().includes(employeeFilter.toLowerCase());
+      n.noticeTitle.toLowerCase().includes(employeeFilter.toLowerCase()) ||
+      n.targetDepartments.toLowerCase().includes(employeeFilter.toLowerCase());
     const matchesStatus = statusFilter === "All" || n.status === statusFilter;
-    const matchesPublishedOn = publishedOnFilter === "All" || n.publishedOn === publishedOnFilter;
+    const noticeDate = new Date(n.publishDate).toLocaleDateString();
+    const matchesPublishedOn = publishedOnFilter === "All" || noticeDate === publishedOnFilter;
+    const matchesSearch = query ? n.noticeTitle.toLowerCase().includes(query.toLowerCase()) : true;
 
     return (
       matchesSearch && matchesDepartment && matchesEmployee && matchesStatus && matchesPublishedOn
     );
   });
 
-  const totalPages = Math.ceil(filtered.length / perPage);
-  const data = filtered.slice((page - 1) * perPage, page * perPage);
+  const totalPages = pagination?.totalPages || 1;
+  const data = filtered;
 
   useEffect(() => {
     setPage(1);
@@ -323,36 +289,36 @@ export default function NoticeBoardPage() {
   };
 
   const toggleAll = () => {
-    const currentPageIds = new Set(data.map((notice) => notice.id));
     if (
       selectedNotices.size === data.length &&
-      data.every((notice) => selectedNotices.has(notice.id))
+      data.every((notice) => selectedNotices.has(notice._id))
     ) {
       // If all current page items are selected, deselect all
       setSelectedNotices((prev) => {
         const newSet = new Set(prev);
-        data.forEach((notice) => newSet.delete(notice.id));
+        data.forEach((notice) => newSet.delete(notice._id));
         return newSet;
       });
     } else {
       // Select all current page items
       setSelectedNotices((prev) => {
         const newSet = new Set(prev);
-        data.forEach((notice) => newSet.add(notice.id));
+        data.forEach((notice) => newSet.add(notice._id));
         return newSet;
       });
     }
   };
 
-  const isAllSelected = data.length > 0 && data.every((notice) => selectedNotices.has(notice.id));
+  const isAllSelected = data.length > 0 && data.every((notice) => selectedNotices.has(notice._id));
 
-  const handleDeleteNotice = (id: string, title: string) => {
-    setDeleteConfirm({ id, title });
+  const handleDeleteNotice = (id: string) => {
+    const n = notices.find((x) => x._id === id);
+    setDeleteConfirm({ id, title: n?.noticeTitle || "" });
   };
 
   const confirmDelete = () => {
     if (deleteConfirm) {
-      setNotices((prev) => prev.filter((n) => n.id !== deleteConfirm.id));
+      setLocalNotices((prev) => prev.filter((n) => n._id !== deleteConfirm.id));
       setDeleteConfirm(null);
     }
   };
@@ -494,7 +460,9 @@ export default function NoticeBoardPage() {
                   <DropdownMenuItem onClick={() => setPublishedOnFilter("All")}>
                     All
                   </DropdownMenuItem>
-                  {Array.from(new Set(notices.map((n) => n.publishedOn))).map((date) => (
+                  {Array.from(
+                    new Set(notices.map((n) => new Date(n.publishDate).toLocaleDateString())),
+                  ).map((date) => (
                     <DropdownMenuItem key={date} onClick={() => setPublishedOnFilter(date)}>
                       {date}
                     </DropdownMenuItem>
@@ -508,33 +476,44 @@ export default function NoticeBoardPage() {
 
       {/* Table */}
       <div className="max-w-full px-4 py-6 sm:px-6 lg:px-8">
-        <NoticesTable
-          notices={data}
-          onView={setSelected}
-          onStatusChange={(id, status) =>
-            setNotices((prev) => prev.map((n) => (n.id === id ? { ...n, status } : n)))
-          }
-          selectedNotices={selectedNotices}
-          onToggleNotice={toggleNotice}
-          onToggleAll={toggleAll}
-          isAllSelected={isAllSelected}
-          isMounted={isMounted}
-          router={router}
-          onDeleteNotice={handleDeleteNotice}
-        />
+        {isLoading ? (
+          <div className="flex items-center justify-center rounded-lg border bg-white p-10">
+            <div className="h-10 w-10 animate-spin rounded-full border-b-2 border-gray-300 border-t-transparent" />
+          </div>
+        ) : error ? (
+          <div className="rounded-lg border bg-white p-6 text-sm text-red-600">
+            Failed to load notices.
+          </div>
+        ) : (
+          <NoticesTable
+            notices={data}
+            onView={setSelected}
+            onStatusChange={(id, status) =>
+              setLocalNotices((prev) => prev.map((n) => (n._id === id ? { ...n, status } : n)))
+            }
+            selectedNotices={selectedNotices}
+            onToggleNotice={toggleNotice}
+            onToggleAll={toggleAll}
+            isAllSelected={isAllSelected}
+            isMounted={isMounted}
+            router={router}
+            onDeleteNotice={handleDeleteNotice}
+          />
+        )}
 
         {/* Pagination */}
         {totalPages > 1 && (
           <div className="mt-6 flex items-center justify-between">
             <p className="text-sm text-gray-700">
-              Showing {(page - 1) * perPage + 1} to {Math.min(page * perPage, filtered.length)} of{" "}
-              {filtered.length} results
+              Showing {(page - 1) * limit + 1} to{" "}
+              {Math.min(page * limit, pagination?.totalNotices || 0)} of{" "}
+              {pagination?.totalNotices || 0} results
             </p>
             <div className="flex items-center gap-2">
               <Button
                 size="sm"
                 variant="outline"
-                disabled={page === 1}
+                disabled={!pagination?.hasPrev}
                 onClick={() => setPage((p) => p - 1)}
                 className="border-gray-300"
               >
@@ -570,7 +549,7 @@ export default function NoticeBoardPage() {
               <Button
                 size="sm"
                 variant="outline"
-                disabled={page === totalPages}
+                disabled={!pagination?.hasNext}
                 onClick={() => setPage((p) => p + 1)}
                 className="border-gray-300"
               >
@@ -587,14 +566,14 @@ export default function NoticeBoardPage() {
         <Dialog open onOpenChange={() => setSelected(null)}>
           <DialogContent className="max-h-[90vh] w-[1800px] overflow-x-auto overflow-y-auto">
             <DialogHeader className="sr-only">
-              <DialogTitle>{selected.title}</DialogTitle>
+              <DialogTitle>{selected.noticeTitle}</DialogTitle>
             </DialogHeader>
             <div className="relative">
               {/* Header with gradient background */}
               <div className="relative rounded-t-lg bg-gradient-to-r from-blue-600 to-purple-600 p-6 text-white">
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
-                    <h2 className="text-2xl font-bold">{selected.title}</h2>
+                    <h2 className="text-2xl font-bold">{selected.noticeTitle}</h2>
                     <div className="mt-2 flex items-center gap-3">
                       <span
                         className={`rounded-full px-3 py-1 text-xs font-semibold ${
@@ -608,7 +587,7 @@ export default function NoticeBoardPage() {
                         {selected.status}
                       </span>
                       <span className="rounded-full bg-white/20 px-3 py-1 text-xs backdrop-blur-sm">
-                        {selected.publishedOn}
+                        {new Date(selected.publishDate).toLocaleDateString()}
                       </span>
                     </div>
                   </div>
@@ -666,7 +645,7 @@ export default function NoticeBoardPage() {
                       <div>
                         <p className="text-xs text-gray-600">Department</p>
                         <p className="text-sm font-semibold text-gray-900">
-                          {selected.departmentsOrIndividuals}
+                          {selected.targetDepartments}
                         </p>
                       </div>
                     </div>
@@ -692,7 +671,7 @@ export default function NoticeBoardPage() {
                       <div>
                         <p className="text-xs text-gray-600">Published</p>
                         <p className="text-sm font-semibold text-gray-900">
-                          {selected.publishedOn}
+                          {new Date(selected.publishDate).toLocaleDateString()}
                         </p>
                       </div>
                     </div>
@@ -708,7 +687,7 @@ export default function NoticeBoardPage() {
                   <div
                     className="prose prose-sm max-w-none text-gray-700"
                     dangerouslySetInnerHTML={{
-                      __html: selected.content,
+                      __html: selected.noticeBody,
                     }}
                   />
                 </div>
@@ -717,7 +696,7 @@ export default function NoticeBoardPage() {
                 <div className="mt-6 flex justify-end gap-3">
                   <Button
                     variant="outline"
-                    onClick={() => router.push(`/notice-board/update?id=${selected.id}`)}
+                    onClick={() => router.push(`/notice-board/update?id=${selected._id}`)}
                     className="flex items-center gap-2"
                   >
                     <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
